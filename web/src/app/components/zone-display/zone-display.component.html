@@ -1,0 +1,3 @@
+<div class="flex mb-4">
+    <app-zone *ngFor="let zone of zones" (onToggleZone)="toggleZone(zone)" [zone]="zone" class="sm:inline-flex md:block"></app-zone>
+</div>
