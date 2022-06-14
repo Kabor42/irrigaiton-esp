@@ -3,7 +3,7 @@ ESPrinkler2
 Arduino/ESP8266 based sprinkler Controller.
 -------------------------------------------
 
-.. figure:: images/collage.jpg
+.. figure:: assets/collage.jpg
    :alt: ESPrinkler2 Collage
 
 This is a totally rewritten second version of
@@ -62,7 +62,7 @@ is no pre-made board.  I've made two of these systems so far, and both of them
 are done with proto boards and point to point wiring and assembled in a
 water resistant project box.
 
-.. figure:: images/collage2.jpg
+.. figure:: assets/collage2.jpg
    :alt: ESPrinkler2 An example build
 
 General Hardware Description
@@ -182,7 +182,7 @@ used to simplify entering/editing the settings and schedules.  The frameworks
 are all loaded onto the spiffs of the device, so it will work even when no
 internet is connected.
 
-.. figure:: images/esprinkler_mainpage.jpg
+.. figure:: assets/esprinkler_mainpage.jpg
    :alt: ESPrinkler2 Main Page
 
 The OLED Screen
@@ -190,7 +190,7 @@ The OLED Screen
 The OLED screen gives the current status of the device, as well as its IP
 address.
 
-.. figure:: images/esprinkler2_oled.jpg
+.. figure:: assets/esprinkler2_oled.jpg
    :alt: ESPrinkler2 OLED Screen
 
 The top line will show the WiFi Status.
@@ -208,7 +208,7 @@ The schedules page allows adding, specifying and arranging schedules of when
 to turn on and off each zone (relay).  Start time, duration, days of week, are
 each set for each schedule.  Up to 30 schedules may be setup.
 
-.. figure:: images/esprinkler2_schedules.jpg
+.. figure:: assets/esprinkler2_schedules.jpg
    :alt: ESPrinkler2 Schedules Page
 
 The Image Page
@@ -217,7 +217,7 @@ The Image Page
 The image page gives you a graphical representation of each sprinkler zone.
 This is handy when testing your sprinklers and setting them up.
 
-.. figure:: images/esprinkler2_image.jpg
+.. figure:: assets/esprinkler2_image.jpg
    :alt: ESPrinkler2 Image Page
 
 There is a default image supplied, and by default 8 buttons, representing each
@@ -238,7 +238,7 @@ Configuration Page
 
 The configuration page allows you to set the ESPrinkler2 as needed.
 
-.. figure:: images/esprinkler2_configuration.jpg
+.. figure:: assets/esprinkler2_configuration.jpg
    :alt: ESPrinkler2 Configuration
 
 The save and load configuration buttons are self explanatory.  Restart is a
@@ -288,7 +288,7 @@ new firmware or a new spiffs binary to be loaded directly from your browser.
 Simply choose the binary image to upload, and then click "Upload!".
 This process can take some time.  You can check progress on the OLED screen.
 
-.. figure:: images/esprinkler2_update.jpg
+.. figure:: assets/esprinkler2_update.jpg
    :alt: ESPrinkler2 Update
 
 SPIFFS edit
@@ -297,5 +297,5 @@ SPIFFS edit
 On the Configuration Page, there is a "SPIFFS Editor" button.  This allows
 you to upload, delete and change the files that the web server uses.
 
-.. figure:: images/esprinkler2_edit.jpg
+.. figure:: assets/esprinkler2_edit.jpg
    :alt: ESPrinkler2 SPIFFS editor
