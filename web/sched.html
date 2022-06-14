@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ESPrinkler2 Sched</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Foundation CSS framework (Bootstrap and jQueryUI also supported) -->
+    <link rel='stylesheet' href='/foundation.min.css'>
+    <script src="/jsoneditor.min.js"></script>
+    <script src="/jquery-3.2.1.min.js"></script>
+    <style>
+    .radius { border-radius: 3px; }
+    .button { border-radius: 5px; }
+    .callout { background-color: #ddd; }
+    .error { color: red ;}
+    div .error { background-color: #fdd ;}
+    </style>
+    <script>
+      /* global JSONEditor, $, FormData, Blob, alert */  /* for eslint */
+      // Set the default CSS theme and icon library globally
+      JSONEditor.defaults.theme = 'foundation5';
+
+      var editor;
+      // Value parameter - required. All other parameters are optional.
+      function isTime (value) {
+        try {
+          var SplitValue = value.split(':');
+          if (SplitValue.length !== 2) return false;
+          var h = parseInt(SplitValue[0], 10);
+          var m = parseInt(SplitValue[1], 10);
+          if (h < 0 || h > 23) return false;
+          if (m < 0 || m > 59) return false;
+        } catch (e) {
+          return false;
+        }
+        return true;
+      }
+      // Value parameter - required. All other parameters are optional.
+      function isDate (value, sepVal, dayIdx, monthIdx, yearIdx) {
+        try {
+          // Change the below values to determine which format of date you wish to check. It is set to dd/mm/yyyy by default.
+          var DayIndex = dayIdx !== undefined ? dayIdx : 0;
+          var MonthIndex = monthIdx !== undefined ? monthIdx : 1;
+          var YearIndex = yearIdx !== undefined ? yearIdx : 2;
+          var SepVal = sepVal !== undefined ? sepVal : '/';
+
+          var SplitValue = value.split(SepVal);
+          var OK = true;
+          if (!(SplitValue[DayIndex].length === 1 || SplitValue[DayIndex].length === 2)) {
+            OK = false;
+          }
+          if (OK && !(SplitValue[MonthIndex].length === 1 || SplitValue[MonthIndex].length === 2)) {
+            OK = false;
+          }
+          if (OK && SplitValue[YearIndex].length !== 4) {
+            OK = false;
+          }
+          if (OK) {
+            var Day = parseInt(SplitValue[DayIndex], 10);
+            var Month = parseInt(SplitValue[MonthIndex], 10);
+            var Year = parseInt(SplitValue[YearIndex], 10);
+            if ((OK = (Year > 1900))) {
+              if ((OK = (Month <= 12) && Month > 0)) {
+                var LeapYear = ((((Year % 4) === 0) && ((Year % 100) !== 0)) || ((Year % 400) === 0));
+                if ((OK = Day) > 0) {
+                  if (Month === 2) {
+                    OK = LeapYear ? Day <= 29 : Day <= 28;
+                  } else {
+                    if ((Month === 4) || (Month === 6) || (Month === 9) || (Month === 11)) {
+                      OK = Day <= 30;
+                    } else {
+                      OK = Day <= 31;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          return OK;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      JSONEditor.defaults.custom_validators.push(function (schema, value, path) {
+        var errors = [];
+        if (schema.required && value === '') {
+          errors.push({
+            path: path,
+            property: 'required',
+            message: schema.title + ' is required'
+          });
+        }
+        if (schema.format === 'date') {
+          if (value !== '' && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) {
+            // Errors must be an object with `path`, `property`, and `message`
+            errors.push({
+              path: path,
+              property: 'format',
+              message: schema.title + ': Dates must be in the format "YYYY-MM-DD"'
+            });
+          } else {
+            if (value !== '' && !isDate(value, '-', 2, 1, 0)) {
+              errors.push({
+                path: path,
+                property: 'format',
+                message: schema.title + ': Invalid Date"'
+              });
+            }
+          }
+        }
+        if (schema.format === 'time') {
+          if (value !== '' && !/^[0-9]{2}:[0-9]{2}$/.test(value)) {
+            // Errors must be an object with `path`, `property`, and `message`
+            errors.push({
+              path: path,
+              property: 'format',
+              message: schema.title + ': Times must be in the format HH:MM'
+            });
+          } else {
+            if (value !== '' && !isTime(value)) {
+              errors.push({
+                path: path,
+                property: 'format',
+                message: schema.title + ': Invalid Time'
+              });
+            }
+          }
+        }
+        return errors;
+      });
+
+      function getStatus () {
+        $.getJSON('status', function (data) {
+          $('.hostname').text(data.host);
+          document.title = data.host + ' Schedules';
+        });
+      }
+
+      function getSched () {
+        $.getJSON('sched.json', function (data) {
+          editor.setValue(data);
+        });
+      }
+      function saveSched (data) {
+        $('#save, #save2').prop('disabled', true);
+        var formData = new FormData();
+        formData.append('data', new Blob([data], { type: 'text/json' }), '/sched.json');
+        $.ajax({
+          url: '/edit',
+          data: formData,
+          processData: false,
+          contentType: false,
+          type: 'POST'
+        }).done(function () { $('#save, #save2').prop('disabled', false); });
+      }
+
+      $(function () {
+        $.ajaxSetup({ cache: false });
+        editor = new JSONEditor($('#editor_holder')[0], {
+          ajax: true,
+          disable_collapse: true,
+          disable_properties: true,
+          required_by_default: true,
+          remove_empty_properties: false,
+          schema: {
+            $ref: 'sched-schema.json'
+          }
+        });
+
+        $('#save, #save2').click(function () {
+          let errors = editor.validate();
+          // console.log(errors);
+          if (errors.length) {
+            var ss = '';
+            for (let i = 0; i < errors.length; i++) {
+              ss += errors[i].path + ':' + errors[i].message + '\r\n';
+            }
+            alert(ss);
+            return;
+          }
+          // console.log(JSON.stringify(editor.getValue()));
+          saveSched(JSON.stringify(editor.getValue(), null, 1));
+        });
+
+        $('#load, #load2').click(function () {
+          getSched();
+        });
+
+        editor.on('ready', function () {
+          $("input[name='root[offsetGMT]']").after("<button id='settz'; class='button tiny'>Set Time zone from Browser</button>");
+          $('#settz').click(function () {
+            var offset = new Date().getTimezoneOffset() * -60;
+            var d = editor.getValue();
+            d.offsetGMT = offset;
+            editor.setValue(d);
+          });
+          getStatus();
+          getSched();
+        });
+      });
+
+   </script>
+ </head>
+  <body>
+
+    <div class="row">
+      <div class="large-12 columns">
+        <div class="panel">
+          <h2><span class="hostname">ESPrinkler2</span> Schedules</h2>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="small-2 columns">
+        <a href="/" class='button'>Main Page</a>
+      </div>
+    </div>
+    <div class='row'>
+      <div class="small-12 columns">
+          <button id='save' class='button '>Save Schedules</button>
+          <button id='load' class='button '>Load Schedules</button>
+          <div id='editor_holder' class="panel callout radius"></div>
+          <button id='save2' class='button '>Save Schedules</button>
+          <button id='load2' class='button '>Load Schedules</button>
+      </div>
+    </div>
+
+  </body>
+</html>
