@@ -153,6 +153,10 @@ SimpleTimer timer;
 int priorPct = -1;
 int fullSize = -1;
 
+const uint8_t DS = 13; // D7, data signal, data
+const uint8_t STCP = 12; // D6, storage register clock, latch_pin
+const uint8_t SHCP = 14; // D5, shift register clock, clock_pin
+
 void displayStatus(int line, const char *fmt, ...);
 void doRestart();
 void loadConfig();
@@ -210,7 +214,7 @@ String getContentType(String filename) {
 
 const char *timstamp() {
   static char tst_buf[20];
-  time_t t = now();
+  time_t t = now() + offsetGMT;
   tmElements_t tm;
   breakTime(t, tm);
   sprintf(tst_buf, "[%02d:%02d:%02d]", tm.Hour, tm.Minute, tm.Second);
@@ -693,8 +697,10 @@ void loadSched() {
 }
 
 void setRelays() {
-  DBG_OUTPUT_PORT.printf("%s set relays=%02x\n", timstamp(), relayState);
-  SPI.transfer(relayState);
+  DBG_OUTPUT_PORT.printf("%s set relays=%s\n", timstamp(), _pretty_days(relayState));
+  digitalWrite(STCP, LOW);
+  shiftOut(DS, SHCP, MSBFIRST, relayState);
+  digitalWrite(STCP, HIGH);
   u8g2.setDrawColor(0);
   u8g2.drawBox(0, 64 - 12, 128, 12);
   for (int i = 0; i < 8; i++) {
@@ -1090,12 +1096,9 @@ void setup(void) {
   pinMode(LED_BUILTIN, OUTPUT);
   setBlinker(50);
 
-  SPI.setDataMode(SPI_MODE0);
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setClockDivider(SPI_CLOCK_DIV16);
-  SPI.setHwCs(true);
-  SPI.begin();
-  SPI.transfer(relayState);
+  pinMode(DS, OUTPUT);
+  pinMode(STCP, OUTPUT);
+  pinMode(SHCP, OUTPUT);
 
   delay(500);
   DBG_OUTPUT_PORT.setDebugOutput(false);
@@ -1397,9 +1400,6 @@ void setup(void) {
     displayStatus(1, "OTA Error[%u]", error);
   });
   ArduinoOTA.begin();
-
-  delay(5000);
-  recalcSched();
 }
 
 void loop(void) {
